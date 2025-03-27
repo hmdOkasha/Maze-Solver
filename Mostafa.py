@@ -3,6 +3,7 @@ import numpy as np
 import scipy.io
 from collections import deque
 import matplotlib.pyplot as plt
+import time
 
 def get_neighbors_8(row, col, rows, cols):
     deltas = [
@@ -115,6 +116,22 @@ def show_map_and_path(value_map, path, goal_pos):
     ax.legend()
     return fig
 
+def display_path_matrix(path):
+    st.subheader("Path Coordinates")
+    
+    # Calculate number of columns for the matrix display
+    num_cols = 5  # You can adjust this number
+    num_steps = len(path)
+    
+    # Create rows of steps
+    for i in range(0, num_steps, num_cols):
+        cols = st.columns(num_cols)
+        for j in range(num_cols):
+            if i + j < num_steps:
+                step_num = i + j + 1
+                row, col = path[i + j]
+                cols[j].write(f"Step {step_num}: ({row}, {col})")
+
 def main():
     st.title("Wavefront Path Planner")
     st.write("Upload a .mat file containing a maze map and specify the starting position to find the path to the goal.")
@@ -152,17 +169,29 @@ def main():
             
             if st.button("Find Path"):
                 try:
+                    # Start timing
+                    start_time = time.time()
+                    
                     value_map, path, goal_pos = planner(map_data, start_row, start_col)
+                    
+                    # Calculate computation time
+                    computation_time = time.time() - start_time
+                    
+                    # Display computation time
+                    st.success(f"Path found in {computation_time:.4f} seconds")
                     
                     # Display the value map and path
                     st.subheader("Value Map and Path")
                     fig = show_map_and_path(value_map, path, goal_pos)
                     st.pyplot(fig)
                     
-                    # Display the path coordinates
-                    st.subheader("Path Coordinates")
-                    for i, (row, col) in enumerate(path):
-                        st.write(f"Step {i+1}: ({row}, {col})")
+                    # Display the value map matrix
+                    st.subheader("Value Map Matrix")
+                    value_map_array = np.array(value_map)
+                    st.dataframe(value_map_array, use_container_width=True)
+                    
+                    # Display path coordinates in matrix format
+                    display_path_matrix(path)
                     
                 except Exception as e:
                     st.error(f"Error: {str(e)}")
